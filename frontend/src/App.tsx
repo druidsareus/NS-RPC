@@ -9,6 +9,8 @@ import {
   IsMac,
   AddCustomGames,
   RemoveGame,
+  CheckForUpdates,
+  GetCurrentVersion,
 } from "../wailsjs/go/main/App";
 import { faToggleOn, faThumbTack, faTrash } from "@fortawesome/free-solid-svg-icons";
 import Fa, { FaLayers } from "solid-fa";
@@ -27,8 +29,17 @@ const App: Component = () => {
   const [isMac, setIsMac] = createSignal(false);
   const [customInput, setCustomInput] = createSignal("");
   const [customMsg, setCustomMsg] = createSignal("");
+  const [updateUrl, setUpdateUrl] = createSignal("");
+  const [currentVersion, setCurrentVersion] = createSignal("");
 
   IsMac().then((result: boolean) => setIsMac(result));
+  
+  GetCurrentVersion().then((version: string) => {
+    setCurrentVersion(version);
+    CheckForUpdates().then((url: string) => {
+      if (url) setUpdateUrl(url);
+    });
+  });
 
   const connCheck = () => {
     CheckConn().then((result: boolean) => {
@@ -274,6 +285,22 @@ const App: Component = () => {
           <br />
           Ensure Discord is started, then click this message to retry.
         </p>
+      </Show>
+
+      <Show when={updateUrl() !== ""}>
+        <div class="mt-5 bg-blue-600 p-4 rounded-lg">
+          <p class="mb-2">
+            Update available! (v{currentVersion()})
+          </p>
+          <a
+            href={updateUrl()}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="underline hover:text-blue-200"
+          >
+            Download Latest Version
+          </a>
+        </div>
       </Show>
     </div>
   );

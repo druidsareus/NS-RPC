@@ -392,3 +392,64 @@ func (a *App) GetCommunityAssetName(gameTitle string) string {
 	// Fall back to "home" if not found
 	return "home"
 }
+
+type VersionInfo struct {
+	Version   string `json:"version"`
+	LatestURL string `json:"latestUrl"`
+}
+
+const currentVersion string = "1.3.0"
+const releaseCheckURL string = "https://api.github.com/repos/druidsareus/NS-RPC/releases/latest"
+
+func (a *App) CheckForUpdates() string {
+	resp, err := http.Get(releaseCheckURL)
+	if err != nil {
+		return ""
+	}
+	defer resp.Body.Close()
+	
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return ""
+	}
+	
+	var release map[string]interface{}
+	err = json.Unmarshal(body, &release)
+	if err != nil {
+		return ""
+	}
+	
+	// Get tag_name (version)
+	if tagName, ok := release["tag_name"].(string); ok {
+		// Remove 'v' prefix if present
+		latestVersion := strings.TrimPrefix(tagName, "v")
+		
+		// Compare versions
+		if latestVersion != currentVersion {
+			// Return download URL
+			if assets, ok := release["assets"].([]interface{}); ok && len(assets) > 0 {
+				for _, asset := range assets {
+					if assetMap, ok := asset.(map[string]interface{}); ok {
+						if name, ok := assetMap["name"].(string); ok {
+							if strings.Contains(name, "dmg") && runtime.GOOS == "darwin" {
+								if url, ok := assetMap["browser_download_url"].(string); ok {
+									return url
+								}
+							} else if strings.Contains(name, "exe") && runtime.GOOS == "windows" {
+								if url, ok := assetMap["browser_download_url"].(string); ok {
+									return url
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	return ""
+}
+
+func (a *App) GetCurrentVersion() string {
+	return currentVersion
+}
