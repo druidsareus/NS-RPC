@@ -207,13 +207,14 @@ func (a *App) SetGame(title string, status string, console string) {
 	}
 	if selectedGame.Title != "" {
 		details := selectedGame.Title
-		if console != "" && console != "Nintendo Switch" {
-			details = selectedGame.Title + " (" + console + ")"
+		state := status
+		if console == "Nintendo Switch 2" {
+			details = selectedGame.Title + " | Switch 2"
 		}
 		err := client.SetActivity(client.Activity{
 			LargeImage: selectedGame.Img,
 			Details:    details,
-			State:      cases.Title(language.English).String(status),
+			State:      cases.Title(language.English).String(state),
 		})
 		if err != nil {
 			panic(err)
