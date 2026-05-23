@@ -22,6 +22,7 @@ const App: Component = () => {
   const [removeShow, setRemoveShow] = createSignal(false);
   const [selection, setSelection] = createSignal("Home");
   const [status, setStatus] = createSignal("Online");
+  const [console, setConsole] = createSignal("Nintendo Switch");
   const [connErr, setConnErr] = createSignal(false);
   const [isMac, setIsMac] = createSignal(false);
   const [customInput, setCustomInput] = createSignal("");
@@ -71,6 +72,7 @@ const App: Component = () => {
   createEffect(() => {
     selection();
     status();
+    console();
     connCheck();
   });
 
@@ -105,6 +107,18 @@ const App: Component = () => {
               )}
             </For>
           </select>
+          <label for="console" class="block pt-5 mb-2 font-medium">
+            Console
+          </label>
+          <select
+            id="console"
+            class="bg-slate-800 border border-white rounded-lg focus:border-red-600 w-80 h-10"
+            onChange={(e) => setConsole(e.currentTarget.value)}
+            value={console()}
+          >
+            <option value="Nintendo Switch">Nintendo Switch</option>
+            <option value="Nintendo Switch 2">Nintendo Switch 2</option>
+          </select>
           <label for="status" class="block pt-5 mb-2 font-medium">
             Status
           </label>
@@ -118,13 +132,13 @@ const App: Component = () => {
         <div class="flex justify-center gap-2 mb-4">
           <button
             class="rounded-xl bg-red-700 w-20 h-10"
-            onClick={() => SetGame(selection(), status())}
+            onClick={() => SetGame(selection(), status(), console())}
           >
             Play
           </button>
           <button
             class="rounded-xl bg-yellow-400 text-black w-20 h-10"
-            onClick={() => SetGame("Home", "Idle")}
+            onClick={() => SetGame("Home", "Idle", "Nintendo Switch")}
           >
             Idle
           </button>

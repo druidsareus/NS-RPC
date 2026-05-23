@@ -197,7 +197,7 @@ func (a *App) GetGamesList() string {
 	return string(data)
 }
 
-func (a *App) SetGame(title string, status string) {
+func (a *App) SetGame(title string, status string, console string) {
 	var selectedGame Game
 	for _, game := range gamesList {
 		if game.Title == title {
@@ -206,9 +206,13 @@ func (a *App) SetGame(title string, status string) {
 		}
 	}
 	if selectedGame.Title != "" {
+		details := selectedGame.Title
+		if console != "" && console != "Nintendo Switch" {
+			details = selectedGame.Title + " (" + console + ")"
+		}
 		err := client.SetActivity(client.Activity{
 			LargeImage: selectedGame.Img,
-			Details:    selectedGame.Title,
+			Details:    details,
 			State:      cases.Title(language.English).String(status),
 		})
 		if err != nil {
