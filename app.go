@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"sort"
+	"strings"
 
 	"github.com/hugolgst/rich-go/client"
 	"golang.org/x/exp/slices"
@@ -48,6 +49,8 @@ func (a *App) startup(ctx context.Context) {
 	if err != nil {
 		panic(err)
 	}
+	// Load custom games that were saved
+	a.LoadCustomGames()
 	err = client.Login(clientID)
 	if err != nil {
 		connErr = true
@@ -87,6 +90,19 @@ func (a *App) Reconnect() bool {
 	return true
 }
 
+func getConfigDir() string {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		panic(err)
+	}
+	configDir := filepath.Join(homeDir, "NS-RPC")
+	_, err = os.Stat(configDir)
+	if err != nil {
+		os.Mkdir(configDir, os.ModePerm)
+	}
+	return configDir
+}
+
 func (a *App) GetGamesData() error {
 	resp, err := http.Get(gamesURL)
 	if err != nil {
@@ -105,6 +121,71 @@ func (a *App) GetGamesData() error {
 		return gamesList[i].Title < gamesList[j].Title
 	})
 	return nil
+}
+
+func (a *App) LoadCustomGames() {
+	configDir := getConfigDir()
+	customGamesPath := filepath.Join(configDir, "custom_games.json")
+	
+	file, err := os.Open(customGamesPath)
+	if err != nil {
+		return
+	}
+	defer file.Close()
+	
+	var customGames Games
+	bytes, _ := io.ReadAll(file)
+	err = json.Unmarshal(bytes, &customGames)
+	if err != nil {
+		return
+	}
+	
+	// Add custom games to the list
+	seen := make(map[string]bool)
+	for _, game := range gamesList {
+		seen[game.Title] = true
+	}
+	
+	for _, customGame := range customGames {
+		if !seen[customGame.Title] {
+			gamesList = append(gamesList, customGame)
+			seen[customGame.Title] = true
+		}
+	}
+	
+	sort.Slice(gamesList, func(i, j int) bool {
+		return gamesList[i].Title < gamesList[j].Title
+	})
+}
+
+func (a *App) SaveCustomGames() {
+	configDir := getConfigDir()
+	customGamesPath := filepath.Join(configDir, "custom_games.json")
+	
+	// Get list of default games (from the URL)
+	var defaultGames Games
+	resp, err := http.Get(gamesURL)
+	if err == nil {
+		defer resp.Body.Close()
+		body, _ := io.ReadAll(resp.Body)
+		json.Unmarshal(body, &defaultGames)
+	}
+	
+	defaultTitles := make(map[string]bool)
+	for _, game := range defaultGames {
+		defaultTitles[game.Title] = true
+	}
+	
+	// Save only custom games (not in default list)
+	var customGames Games
+	for _, game := range gamesList {
+		if !defaultTitles[game.Title] {
+			customGames = append(customGames, game)
+		}
+	}
+	
+	data, _ := json.Marshal(customGames)
+	os.WriteFile(customGamesPath, data, os.ModePerm)
 }
 
 func (a *App) GetGamesList() string {
@@ -198,4 +279,82 @@ func (a *App) GetPins() string {
 
 func (a *App) IsMac() bool {
 	return runtime.GOOS != "windows"
+}
+
+func (a *App) AddCustomGames(gameInput string) string {
+	lines := strings.Split(gameInput, "\n")
+	var customGames Games
+	seen := make(map[string]bool)
+
+	// Add existing games to seen map
+	for _, game := range gamesList {
+		seen[game.Title] = true
+	}
+
+	// Parse new games
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		// Remove leading/trailing quotes if present
+		line = strings.Trim(line, "\"'")
+		if !seen[line] {
+			// Generate image ID from title (lowercase, replace spaces/special chars)
+			imgID := strings.ToLower(line)
+			imgID = strings.ReplaceAll(imgID, " ", "")
+			imgID = strings.ReplaceAll(imgID, "®", "")
+			imgID = strings.ReplaceAll(imgID, ":", "")
+			imgID = strings.ReplaceAll(imgID, "!", "")
+			imgID = strings.ReplaceAll(imgID, "'", "")
+			imgID = strings.ReplaceAll(imgID, "–", "")
+			imgID = strings.ReplaceAll(imgID, "-", "")
+			imgID = strings.ReplaceAll(imgID, "(", "")
+			imgID = strings.ReplaceAll(imgID, ")", "")
+			imgID = strings.ReplaceAll(imgID, ".", "")
+			
+			customGames = append(customGames, Game{Title: line, Img: imgID})
+			gamesList = append(gamesList, Game{Title: line, Img: imgID})
+			seen[line] = true
+		}
+	}
+
+	// Sort games by title
+	sort.Slice(gamesList, func(i, j int) bool {
+		return gamesList[i].Title < gamesList[j].Title
+	})
+
+	// Save custom games to disk
+	a.SaveCustomGames()
+
+	response := map[string]interface{}{
+		"added":   len(customGames),
+		"message": "Custom games added successfully!",
+	}
+	data, _ := json.Marshal(response)
+	return string(data)
+}
+
+func (a *App) RemoveGame(title string) string {
+	for i, game := range gamesList {
+		if game.Title == title {
+			gamesList = append(gamesList[:i], gamesList[i+1:]...)
+			
+			// Save custom games to disk
+			a.SaveCustomGames()
+			
+			response := map[string]interface{}{
+				"removed": true,
+				"message": "Game removed successfully!",
+			}
+			data, _ := json.Marshal(response)
+			return string(data)
+		}
+	}
+	response := map[string]interface{}{
+		"removed": false,
+		"message": "Game not found!",
+	}
+	data, _ := json.Marshal(response)
+	return string(data)
 }
