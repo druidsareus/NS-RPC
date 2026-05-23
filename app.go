@@ -408,7 +408,7 @@ type VersionInfo struct {
 	LatestURL string `json:"latestUrl"`
 }
 
-const currentVersion string = "1.3.1"
+const currentVersion string = "1.3.2"
 const releaseCheckURL string = "https://api.github.com/repos/druidsareus/NS-RPC/releases/latest"
 
 func (a *App) CheckForUpdates() string {
