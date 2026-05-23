@@ -333,6 +333,16 @@ func (a *App) AddCustomGames(gameInput string) string {
 }
 
 func (a *App) RemoveGame(title string) string {
+	// Prevent deleting Home
+	if title == "Home" {
+		response := map[string]interface{}{
+			"removed": false,
+			"message": "Cannot delete Home!",
+		}
+		data, _ := json.Marshal(response)
+		return string(data)
+	}
+	
 	for i, game := range gamesList {
 		if game.Title == title {
 			gamesList = append(gamesList[:i], gamesList[i+1:]...)
