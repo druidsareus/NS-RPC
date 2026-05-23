@@ -1,0 +1,22 @@
+{
+  "assetMappings": {
+    "description": "Community-contributed game icon mappings for Discord Rich Presence",
+    "instructions": "To contribute: 1) Upload your icon to Discord Developer Portal, 2) Add the mapping below with game title as key and asset name as value",
+    "games": {
+      "Mario Kart 8 Deluxe": "mario_kart_8_deluxe",
+      "The Legend of Zelda: Breath of the Wild": "zelda_botw",
+      "The Legend of Zelda: Tears of the Kingdom": "zelda_totk",
+      "Super Smash Bros. Ultimate": "smash_bros_ultimate",
+      "Splatoon 3": "splatoon_3",
+      "Animal Crossing: New Horizons": "animal_crossing_nh",
+      "Pokémon Violet": "pokemon_violet",
+      "Pokémon Shield": "pokemon_shield",
+      "Hades": "hades",
+      "Minecraft": "minecraft",
+      "Fortnite": "fortnite",
+      "Metroid Dread": "metroid_dread",
+      "Fire Emblem: Three Houses": "fe_three_houses",
+      "Xenoblade Chronicles 3": "xenoblade_chronicles_3"
+    }
+  }
+}

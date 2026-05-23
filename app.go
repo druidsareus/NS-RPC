@@ -36,7 +36,7 @@ type Pins []string
 var gamesList Games
 var connErr bool = false
 
-const clientID string = "1114647533562646700"
+const clientID string = "1507780464306425866"
 const gamesURL string = "https://raw.githubusercontent.com/Da532/NS-RPC/master/games.json"
 
 func NewApp() *App {
@@ -49,6 +49,8 @@ func (a *App) startup(ctx context.Context) {
 	if err != nil {
 		panic(err)
 	}
+	// Load community assets
+	a.LoadCommunityAssets()
 	// Load custom games that were saved
 	a.LoadCustomGames()
 	err = client.Login(clientID)
@@ -305,9 +307,8 @@ func (a *App) AddCustomGames(gameInput string) string {
 		// Remove leading/trailing quotes if present
 		line = strings.Trim(line, "\"'")
 		if !seen[line] {
-			// Use "home" (Switch logo) as default for all custom games
-			// Discord Rich Presence only supports pre-registered images
-			imgID := "home"
+			// Check if community has an asset for this game
+			imgID := a.GetCommunityAssetName(line)
 			
 			customGames = append(customGames, Game{Title: line, Img: imgID})
 			gamesList = append(gamesList, Game{Title: line, Img: imgID})
@@ -353,4 +354,41 @@ func (a *App) RemoveGame(title string) string {
 	}
 	data, _ := json.Marshal(response)
 	return string(data)
+}
+
+type CommunityAssets struct {
+	Assets map[string]interface{} `json:"assetMappings"`
+}
+
+var communityAssets CommunityAssets
+
+func (a *App) LoadCommunityAssets() {
+	configDir := getConfigDir()
+	assetsPath := filepath.Join(configDir, "community_assets.json")
+	
+	file, err := os.Open(assetsPath)
+	if err != nil {
+		// Try loading from app directory
+		file, err = os.Open("community_assets.json")
+		if err != nil {
+			communityAssets.Assets = make(map[string]interface{})
+			return
+		}
+	}
+	defer file.Close()
+	
+	bytes, _ := io.ReadAll(file)
+	json.Unmarshal(bytes, &communityAssets)
+}
+
+func (a *App) GetCommunityAssetName(gameTitle string) string {
+	// Check community assets first
+	if assets, ok := communityAssets.Assets["games"].(map[string]interface{}); ok {
+		if assetName, exists := assets[gameTitle].(string); exists {
+			return assetName
+		}
+	}
+	
+	// Fall back to "home" if not found
+	return "home"
 }
