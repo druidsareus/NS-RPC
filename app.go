@@ -436,23 +436,9 @@ func (a *App) CheckForUpdates() string {
 		
 		// Compare versions
 		if latestVersion != currentVersion {
-			// Return download URL
-			if assets, ok := release["assets"].([]interface{}); ok && len(assets) > 0 {
-				for _, asset := range assets {
-					if assetMap, ok := asset.(map[string]interface{}); ok {
-						if name, ok := assetMap["name"].(string); ok {
-							if strings.Contains(name, "dmg") && runtime.GOOS == "darwin" {
-								if url, ok := assetMap["browser_download_url"].(string); ok {
-									return url
-								}
-							} else if strings.Contains(name, "exe") && runtime.GOOS == "windows" {
-								if url, ok := assetMap["browser_download_url"].(string); ok {
-									return url
-								}
-							}
-						}
-					}
-				}
+			// Return GitHub releases page link instead of direct download
+			if htmlURL, ok := release["html_url"].(string); ok {
+				return htmlURL
 			}
 		}
 	}

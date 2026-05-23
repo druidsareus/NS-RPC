@@ -289,19 +289,20 @@ const App: Component = () => {
 
       <Show when={updateUrl() !== ""}>
         <div class="mt-5 bg-blue-600 p-4 rounded-lg">
-          <p class="mb-2">
-            Update available! (v{currentVersion()})
-          </p>
           <a
             href={updateUrl()}
             target="_blank"
             rel="noopener noreferrer"
             class="underline hover:text-blue-200"
           >
-            Download Latest Version
+            Update available - Click to download
           </a>
         </div>
       </Show>
+
+      <div class="mt-5 text-xs text-gray-400">
+        v{currentVersion()}
+      </div>
     </div>
   );
 };
