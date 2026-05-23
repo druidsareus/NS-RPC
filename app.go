@@ -363,3 +363,40 @@ func (a *App) RemoveGame(title string) string {
 	data, _ := json.Marshal(response)
 	return string(data)
 }
+
+func (a *App) FetchGameIcon(title string) string {
+	// Search for game icon on Switch Icon Showdown
+	searchURL := "https://www.switchiconshowdown.com/search.php?title=" + strings.ReplaceAll(title, " ", "%20")
+	
+	resp, err := http.Get(searchURL)
+	if err != nil {
+		return "home"
+	}
+	defer resp.Body.Close()
+	
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "home"
+	}
+	
+	// Parse HTML to find first icon URL
+	bodyStr := string(body)
+	iconStart := strings.Index(bodyStr, "images/100/")
+	
+	if iconStart == -1 {
+		return "home"
+	}
+	
+	// Extract icon ID
+	iconIDStart := iconStart + len("images/100/")
+	iconIDEnd := strings.Index(bodyStr[iconIDStart:], ".png")
+	
+	if iconIDEnd == -1 {
+		return "home"
+	}
+	
+	iconID := bodyStr[iconIDStart : iconIDStart+iconIDEnd]
+	iconURL := "https://www.switchiconshowdown.com/images/100/" + iconID + ".png"
+	
+	return iconURL
+}
