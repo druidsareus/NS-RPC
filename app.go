@@ -305,18 +305,9 @@ func (a *App) AddCustomGames(gameInput string) string {
 		// Remove leading/trailing quotes if present
 		line = strings.Trim(line, "\"'")
 		if !seen[line] {
-			// Generate image ID from title (lowercase, replace spaces/special chars)
-			imgID := strings.ToLower(line)
-			imgID = strings.ReplaceAll(imgID, " ", "")
-			imgID = strings.ReplaceAll(imgID, "®", "")
-			imgID = strings.ReplaceAll(imgID, ":", "")
-			imgID = strings.ReplaceAll(imgID, "!", "")
-			imgID = strings.ReplaceAll(imgID, "'", "")
-			imgID = strings.ReplaceAll(imgID, "–", "")
-			imgID = strings.ReplaceAll(imgID, "-", "")
-			imgID = strings.ReplaceAll(imgID, "(", "")
-			imgID = strings.ReplaceAll(imgID, ")", "")
-			imgID = strings.ReplaceAll(imgID, ".", "")
+			// Use "home" (Switch logo) as default for all custom games
+			// Discord Rich Presence only supports pre-registered images
+			imgID := "home"
 			
 			customGames = append(customGames, Game{Title: line, Img: imgID})
 			gamesList = append(gamesList, Game{Title: line, Img: imgID})
@@ -362,41 +353,4 @@ func (a *App) RemoveGame(title string) string {
 	}
 	data, _ := json.Marshal(response)
 	return string(data)
-}
-
-func (a *App) FetchGameIcon(title string) string {
-	// Search for game icon on Switch Icon Showdown
-	searchURL := "https://www.switchiconshowdown.com/search.php?title=" + strings.ReplaceAll(title, " ", "%20")
-	
-	resp, err := http.Get(searchURL)
-	if err != nil {
-		return "home"
-	}
-	defer resp.Body.Close()
-	
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "home"
-	}
-	
-	// Parse HTML to find first icon URL
-	bodyStr := string(body)
-	iconStart := strings.Index(bodyStr, "images/100/")
-	
-	if iconStart == -1 {
-		return "home"
-	}
-	
-	// Extract icon ID
-	iconIDStart := iconStart + len("images/100/")
-	iconIDEnd := strings.Index(bodyStr[iconIDStart:], ".png")
-	
-	if iconIDEnd == -1 {
-		return "home"
-	}
-	
-	iconID := bodyStr[iconIDStart : iconIDStart+iconIDEnd]
-	iconURL := "https://www.switchiconshowdown.com/images/100/" + iconID + ".png"
-	
-	return iconURL
 }
